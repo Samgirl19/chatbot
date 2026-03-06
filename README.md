@@ -1,7 +1,7 @@
 # Streamlit Water Quality AI Chatbot
 
 ## Overview
-This project is a simple AI-powered chatbot built with **Streamlit** and the **OpenAI API**.  
+This project is a simple AI-powered chatbot built with **Streamlit** and the **Hugging Face**.  
 The chatbot answers questions related to a **water quality dataset** containing environmental data from Biscayne Bay.
 
 The application allows users to interact with the dataset using natural language questions such as:
