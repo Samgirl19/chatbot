@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 import requests
-import plotly.express as px
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -32,10 +31,8 @@ st.subheader("Dataset Preview")
 st.dataframe(df)
 
 st.write("Dataset Columns:", df.columns)
-tab1, tab2, tab3 = st.tabs(
-    ["Descriptive Statistics",
-     "2D Plots",
-     "3D Plots"]
+tab1 = st.tabs(
+    ["Descriptive Statistics"]
 )
 
 # ------------------- TAB 1 -------------------
@@ -49,29 +46,6 @@ with tab1:
     st.dataframe(df.describe())
     st.caption("Descriptive Statistics")
 
-
-# ------------------- TAB 2 -------------------
-with tab2:
-    fig1 = px.line(
-        df,
-        x="Time",
-        y="Temperature (c)",
-        color="pH"
-    )
-    st.plotly_chart(fig1, use_container_width=True)
-
-
-# ------------------- TAB 3 -------------------
-with tab3:
-    fig3 = px.scatter_3d(
-        df,
-        x="Longitude",
-        y="Latitude",
-        z="Total Water Column (m)",
-        color="Temperature (c)"
-    )
-    fig3.update_scenes(zaxis_autorange="reversed")
-    st.plotly_chart(fig3, use_container_width=True)
 
 # Retrieve relevant data
 def retrieve_relevant_data(question, dataframe):
