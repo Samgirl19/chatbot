@@ -1,19 +1,40 @@
-# 💬 Chatbot template
+# Streamlit Water Quality AI Chatbot
 
-A simple Streamlit app that shows how to build a chatbot using OpenAI's GPT-3.5.
+## Overview
+This project is a simple AI-powered chatbot built with **Streamlit** and the **Hugging Face**.  
+The chatbot answers questions related to a **water quality dataset** containing environmental data from Biscayne Bay.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatbot-template.streamlit.app/)
+The application allows users to interact with the dataset using natural language questions such as:
+- What is the average pH level?
+- Which station has the highest temperature?
+- What trends appear in dissolved oxygen levels?
 
-### How to run it on your own machine
+The goal of the project is to demonstrate how **AI models can assist with data exploration and environmental analysis**.
 
-1. Install the requirements
+---
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+## Features
+- Interactive **Streamlit web interface**
+- Chat-style conversation with an AI assistant
+- Integration with the **OpenAI API**
+- Ability to answer questions about a **water quality dataset**
+- Dataset preview displayed in the interface
+- Maintains **chat history** during the session
 
-2. Run the app
+---
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## Technologies Used
+- **Python**
+- **Streamlit**
+- **Pandas**
+- **OpenAI API**
+- **GitHub Codespaces / Local Python Environment**
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Samgirl19/chatbot
+cd water-quality-chatbot

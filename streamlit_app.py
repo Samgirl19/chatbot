@@ -1,56 +1,124 @@
 import streamlit as st
-from openai import OpenAI
+import pandas as pd
+import os
+import requests
+from dotenv import load_dotenv
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
+# Load environment variables
+load_dotenv()
+
+# Hugging Face API
+HF_API_KEY = os.getenv("HF_API_KEY")
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"
+
+headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+
+# Load dataset
+df = pd.read_csv("biscayneBay_waterquality.csv")
+
+# Streamlit UI
+st.title("💧 Water Quality AI Assistant")
+st.write("Ask questions about the water quality dataset!")
+
+# Allow user to enter API key
+hf_key_input = st.text_input("Enter Hugging Face API Key", type="password")
+
+if hf_key_input:
+    headers = {"Authorization": f"Bearer {hf_key_input}"}
+
+# Preview dataset
+st.subheader("Dataset Preview")
+st.dataframe(df)
+
+st.write("Dataset Columns:", df.columns)
+tab1 = st.tabs(
+    ["Descriptive Statistics"]
 )
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+# ------------------- TAB 1 -------------------
+with tab1:
+    st.info("Dataset Overview")
+    st.dataframe(df)
+    st.caption("Raw Data")
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+    st.divider()
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    st.dataframe(df.describe())
+    st.caption("Descriptive Statistics")
 
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
 
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
+# Retrieve relevant data
+def retrieve_relevant_data(question, dataframe):
 
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+    question = question.lower()
 
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
+    if "ph" in question and "pH" in dataframe.columns:
+        return dataframe[["pH"]]
 
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+    elif "turbidity" in question and "turbidity" in dataframe.columns:
+        return dataframe[["turbidity"]]
+
+    elif "oxygen" in question and "dissolved_oxygen" in dataframe.columns:
+        return dataframe[["dissolved_oxygen"]]
+
+    else:
+        return dataframe.head(10)
+
+
+# Hugging Face query
+def query_huggingface(prompt):
+
+    payload = {"inputs": prompt}
+
+    response = requests.post(API_URL, headers=headers, json=payload)
+
+    return response.json()
+
+
+# Chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+
+# Chat input
+if prompt := st.chat_input("Ask a question about the water data"):
+
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Retrieve dataset rows
+    relevant_data = retrieve_relevant_data(prompt, df)
+
+    context = relevant_data.to_string(index=False)
+
+    ai_prompt = f"""
+You are a water quality expert.
+
+Use ONLY the dataset below to answer the question.
+
+Dataset:
+{context}
+
+Question:
+{prompt}
+
+If the answer is not in the dataset, say the dataset does not contain the answer.
+"""
+
+    result = query_huggingface(ai_prompt)
+
+    try:
+        reply = result[0]["generated_text"]
+    except:
+        reply = "Model could not generate a response."
+
+    with st.chat_message("assistant"):
+        st.markdown(reply)
+
+    st.session_state.messages.append({"role": "assistant", "content": reply})
